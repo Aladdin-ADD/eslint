@@ -9,7 +9,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/require-atomic-updates");
-const RuleTester = require("../../../lib/testers/rule-tester");
+const { RuleTester } = require("../../../lib/rule-tester");
 
 
 //------------------------------------------------------------------------------
@@ -107,6 +107,60 @@ ruleTester.run("require-atomic-updates", rule, {
                     19 ? a : b,
                     20 ? a : b
                 ];
+            }
+        `,
+
+        // https://github.com/eslint/eslint/issues/11194
+        `
+            async function f() {
+                let records
+                records = await a.records
+                g(() => { records })
+            }
+        `,
+
+        // https://github.com/eslint/eslint/issues/11687
+        `
+            async function f() {
+                try {
+                    this.foo = doSomething();
+                } catch (e) {
+                    this.foo = null;
+                    await doElse();
+                }
+            }
+        `,
+
+        // https://github.com/eslint/eslint/issues/11723
+        `
+            async function f(foo) {
+                let bar = await get(foo.id);
+                bar.prop = foo.prop;
+            }
+        `,
+        `
+            async function f(foo) {
+                let bar = await get(foo.id);
+                foo = bar.prop;
+            }
+        `,
+        `
+            async function f() {
+                let foo = {}
+                let bar = await get(foo.id);
+                foo.prop = bar.prop;
+            }
+        `,
+
+        // https://github.com/eslint/eslint/issues/11954
+        `
+            let count = 0
+            let queue = []
+            async function A(...args) {
+                count += 1
+                await new Promise(resolve=>resolve())
+                count -= 1
+                return
             }
         `
     ],
@@ -207,6 +261,17 @@ ruleTester.run("require-atomic-updates", rule, {
         {
             code: "let foo = 0; async function x() { foo = (a ? b ? c ? d ? foo : e : f : g : h) + await bar; if (baz); }",
             errors: [VARIABLE_ERROR]
+        },
+
+        // https://github.com/eslint/eslint/issues/11723
+        {
+            code: `
+                async function f(foo) {
+                    let buz = await get(foo.id);
+                    foo.bar = buz.bar;
+                }
+            `,
+            errors: [STATIC_PROPERTY_ERROR]
         }
     ]
 });

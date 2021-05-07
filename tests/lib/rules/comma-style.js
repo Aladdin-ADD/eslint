@@ -9,7 +9,7 @@
 //------------------------------------------------------------------------------
 
 const rule = require("../../../lib/rules/comma-style"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Tests
@@ -292,7 +292,9 @@ ruleTester.run("comma-style", rule, {
             output: "var foo = 1,\nbar = 2;",
             errors: [{
                 messageId: "expectedCommaLast",
-                type: "VariableDeclarator"
+                type: "VariableDeclarator",
+                column: 1,
+                endColumn: 2
             }]
         },
         {
@@ -473,7 +475,9 @@ ruleTester.run("comma-style", rule, {
             options: ["first"],
             errors: [{
                 messageId: "expectedCommaFirst",
-                type: "VariableDeclarator"
+                type: "VariableDeclarator",
+                column: 12,
+                endColumn: 13
             }]
         },
         {
@@ -590,7 +594,9 @@ ruleTester.run("comma-style", rule, {
             output: "var foo = [\n(bar\n),\nbaz\n];",
             errors: [{
                 messageId: "unexpectedLineBeforeAndAfterComma",
-                type: "Identifier"
+                type: "Identifier",
+                column: 1,
+                endColumn: 2
             }]
         },
         {
@@ -611,6 +617,13 @@ ruleTester.run("comma-style", rule, {
         {
             code: "[\n[foo(3)],\n,\nbar\n];",
             output: "[\n[foo(3)],,\nbar\n];",
+            errors: [{ messageId: "unexpectedLineBeforeAndAfterComma" }]
+        },
+        {
+
+            // https://github.com/eslint/eslint/issues/10632
+            code: "[foo//\n,/*block\ncomment*/];",
+            output: "[foo,//\n/*block\ncomment*/];",
             errors: [{ messageId: "unexpectedLineBeforeAndAfterComma" }]
         }
     ]

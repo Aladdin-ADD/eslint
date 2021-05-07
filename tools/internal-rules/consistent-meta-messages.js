@@ -11,7 +11,6 @@
 
 /**
  * Gets the property of the Object node passed in that has the name specified.
- *
  * @param {string} property Name of the property to return.
  * @param {ASTNode} node The ObjectExpression node.
  * @returns {ASTNode} The Property node or null if not found.
@@ -65,8 +64,9 @@ module.exports = {
             recommended: false
         },
         schema: [],
+        type: "suggestion",
         messages: {
-            expectedMessages: "Expected `meta.messages` property"
+            expectedMessages: "Expected `meta.messages` property."
         }
     },
 

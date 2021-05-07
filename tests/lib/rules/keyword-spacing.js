@@ -11,7 +11,7 @@
 
 const parser = require("../../fixtures/fixture-parser"),
     rule = require("../../../lib/rules/keyword-spacing"),
-    RuleTester = require("../../../lib/testers/rule-tester");
+    { RuleTester } = require("../../../lib/rule-tester");
 
 //------------------------------------------------------------------------------
 // Helpers
@@ -34,9 +34,8 @@ const NEITHER = { before: false, after: false };
  *         after: false,
  *         overrides: {as: {before: true, after: true}}
  *     }
- *
- * @param {string} keyword - A keyword to be overriden.
- * @param {Object} value - A value to override.
+ * @param {string} keyword A keyword to be overridden.
+ * @param {Object} value A value to override.
  * @returns {Object} An option object to test an "overrides" option.
  */
 function override(keyword, value) {
@@ -53,69 +52,63 @@ function override(keyword, value) {
 
 /**
  * Gets an error message that expected space(s) before a specified keyword.
- *
- * @param {string} keyword - A keyword.
+ * @param {string} keyword A keyword.
  * @returns {string[]} An error message.
  */
 function expectedBefore(keyword) {
-    return [`Expected space(s) before "${keyword}".`];
+    return [{ messageId: "expectedBefore", data: { value: keyword } }];
 }
 
 /**
  * Gets an error message that expected space(s) after a specified keyword.
- *
- * @param {string} keyword - A keyword.
+ * @param {string} keyword A keyword.
  * @returns {string[]} An error message.
  */
 function expectedAfter(keyword) {
-    return [`Expected space(s) after "${keyword}".`];
+    return [{ messageId: "expectedAfter", data: { value: keyword } }];
 }
 
 /**
  * Gets error messages that expected space(s) before and after a specified
  * keyword.
- *
- * @param {string} keyword - A keyword.
+ * @param {string} keyword A keyword.
  * @returns {string[]} Error messages.
  */
 function expectedBeforeAndAfter(keyword) {
     return [
-        `Expected space(s) before "${keyword}".`,
-        `Expected space(s) after "${keyword}".`
+        { messageId: "expectedBefore", data: { value: keyword } },
+        { messageId: "expectedAfter", data: { value: keyword } }
     ];
 }
 
 /**
  * Gets an error message that unexpected space(s) before a specified keyword.
- *
- * @param {string} keyword - A keyword.
+ * @param {string} keyword A keyword.
  * @returns {string[]} An error message.
  */
 function unexpectedBefore(keyword) {
-    return [`Unexpected space(s) before "${keyword}".`];
+    return [{ messageId: "unexpectedBefore", data: { value: keyword } }];
 }
 
 /**
  * Gets an error message that unexpected space(s) after a specified keyword.
- *
- * @param {string} keyword - A keyword.
+ * @param {string} keyword A keyword.
  * @returns {string[]} An error message.
  */
 function unexpectedAfter(keyword) {
-    return [`Unexpected space(s) after "${keyword}".`];
+    return [{ messageId: "unexpectedAfter", data: { value: keyword } }];
 }
 
 /**
  * Gets error messages that unexpected space(s) before and after a specified
  * keyword.
- *
- * @param {string} keyword - A keyword.
+ * @param {string} keyword A keyword.
  * @returns {string[]} Error messages.
  */
 function unexpectedBeforeAndAfter(keyword) {
     return [
-        `Unexpected space(s) before "${keyword}".`,
-        `Unexpected space(s) after "${keyword}".`
+        { messageId: "unexpectedBefore", data: { value: keyword } },
+        { messageId: "unexpectedAfter", data: { value: keyword } }
     ];
 }
 
@@ -132,10 +125,14 @@ ruleTester.run("keyword-spacing", rule, {
         // as
         //----------------------------------------------------------------------
 
-        { code: "import * as a from \"foo\"", parserOptions: { sourceType: "module" } },
-        { code: "import*as a from\"foo\"", options: [NEITHER], parserOptions: { sourceType: "module" } },
-        { code: "import* as a from\"foo\"", options: [override("as", BOTH)], parserOptions: { sourceType: "module" } },
-        { code: "import *as a from \"foo\"", options: [override("as", NEITHER)], parserOptions: { sourceType: "module" } },
+        { code: "import * as a from \"foo\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "import*as a from\"foo\"", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "import* as a from\"foo\"", options: [override("as", BOTH)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "import *as a from \"foo\"", options: [override("as", NEITHER)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export * as a from \"foo\"", parserOptions: { ecmaVersion: 2020, sourceType: "module" } },
+        { code: "export*as a from\"foo\"", options: [NEITHER], parserOptions: { ecmaVersion: 2020, sourceType: "module" } },
+        { code: "export* as a from\"foo\"", options: [override("as", BOTH)], parserOptions: { ecmaVersion: 2020, sourceType: "module" } },
+        { code: "export *as a from \"foo\"", options: [override("as", NEITHER)], parserOptions: { ecmaVersion: 2020, sourceType: "module" } },
 
         //----------------------------------------------------------------------
         // async
@@ -552,6 +549,8 @@ ruleTester.run("keyword-spacing", rule, {
         { code: "if (a) {}else{}", options: [override("else", NEITHER)] },
         "if (a) {}\nelse\n{}",
         { code: "if(a) {}\nelse\n{}", options: [NEITHER] },
+        { code: "if(a){ }else{ }", options: [{ before: false, after: true, overrides: { else: { after: false }, if: { after: false } } }] },
+        { code: "if(a){ }else{ }", options: [{ before: true, after: false, overrides: { else: { before: false }, if: { before: false } } }] },
 
         // not conflict with `semi-spacing`
         "if (a);else;",
@@ -561,16 +560,16 @@ ruleTester.run("keyword-spacing", rule, {
         // export
         //----------------------------------------------------------------------
 
-        { code: "{} export {a}", parserOptions: { sourceType: "module" } },
-        { code: "{} export default a", parserOptions: { sourceType: "module" } },
-        { code: "{} export * from \"a\"", parserOptions: { sourceType: "module" } },
-        { code: "{}export{a}", options: [NEITHER], parserOptions: { sourceType: "module" } },
-        { code: "{} export {a}", options: [override("export", BOTH)], parserOptions: { sourceType: "module" } },
-        { code: "{}export{a}", options: [override("export", NEITHER)], parserOptions: { sourceType: "module" } },
+        { code: "var a = 0; {} export {a}", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{} export default a", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{} export * from \"a\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "var a = 0; {}export{a}", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "var a = 0; {} export {a}", options: [override("export", BOTH)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "var a = 0; {}export{a}", options: [override("export", NEITHER)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
 
         // not conflict with `semi-spacing`
-        { code: ";export {a}", parserOptions: { sourceType: "module" } },
-        { code: "; export{a}", options: [NEITHER], parserOptions: { sourceType: "module" } },
+        { code: "var a = 0;\n;export {a}", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "var a = 0;\n; export{a}", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
 
         //----------------------------------------------------------------------
         // extends
@@ -629,18 +628,18 @@ ruleTester.run("keyword-spacing", rule, {
         // from
         //----------------------------------------------------------------------
 
-        { code: "import {foo} from \"foo\"", parserOptions: { sourceType: "module" } },
-        { code: "export {foo} from \"foo\"", parserOptions: { sourceType: "module" } },
-        { code: "export * from \"foo\"", parserOptions: { sourceType: "module" } },
-        { code: "import{foo}from\"foo\"", options: [NEITHER], parserOptions: { sourceType: "module" } },
-        { code: "export{foo}from\"foo\"", options: [NEITHER], parserOptions: { sourceType: "module" } },
-        { code: "export*from\"foo\"", options: [NEITHER], parserOptions: { sourceType: "module" } },
-        { code: "import{foo} from \"foo\"", options: [override("from", BOTH)], parserOptions: { sourceType: "module" } },
-        { code: "export{foo} from \"foo\"", options: [override("from", BOTH)], parserOptions: { sourceType: "module" } },
-        { code: "export* from \"foo\"", options: [override("from", BOTH)], parserOptions: { sourceType: "module" } },
-        { code: "import {foo}from\"foo\"", options: [override("from", NEITHER)], parserOptions: { sourceType: "module" } },
-        { code: "export {foo}from\"foo\"", options: [override("from", NEITHER)], parserOptions: { sourceType: "module" } },
-        { code: "export *from\"foo\"", options: [override("from", NEITHER)], parserOptions: { sourceType: "module" } },
+        { code: "import {foo} from \"foo\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export {foo} from \"foo\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export * from \"foo\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "import{foo}from\"foo\"", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export{foo}from\"foo\"", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export*from\"foo\"", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "import{foo} from \"foo\"", options: [override("from", BOTH)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export{foo} from \"foo\"", options: [override("from", BOTH)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export* from \"foo\"", options: [override("from", BOTH)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "import {foo}from\"foo\"", options: [override("from", NEITHER)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export {foo}from\"foo\"", options: [override("from", NEITHER)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "export *from\"foo\"", options: [override("from", NEITHER)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
 
         //----------------------------------------------------------------------
         // function
@@ -752,19 +751,19 @@ ruleTester.run("keyword-spacing", rule, {
         // import
         //----------------------------------------------------------------------
 
-        { code: "{} import {a} from \"foo\"", parserOptions: { sourceType: "module" } },
-        { code: "{} import a from \"foo\"", parserOptions: { sourceType: "module" } },
-        { code: "{} import * as a from \"a\"", parserOptions: { sourceType: "module" } },
-        { code: "{}import{a}from\"foo\"", options: [NEITHER], parserOptions: { sourceType: "module" } },
-        { code: "{}import*as a from\"foo\"", options: [NEITHER], parserOptions: { sourceType: "module" } },
-        { code: "{} import {a}from\"foo\"", options: [override("import", BOTH)], parserOptions: { sourceType: "module" } },
-        { code: "{} import *as a from\"foo\"", options: [override("import", BOTH)], parserOptions: { sourceType: "module" } },
-        { code: "{}import{a} from \"foo\"", options: [override("import", NEITHER)], parserOptions: { sourceType: "module" } },
-        { code: "{}import* as a from \"foo\"", options: [override("import", NEITHER)], parserOptions: { sourceType: "module" } },
+        { code: "{} import {a} from \"foo\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{} import a from \"foo\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{} import * as a from \"a\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{}import{a}from\"foo\"", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{}import*as a from\"foo\"", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{} import {a}from\"foo\"", options: [override("import", BOTH)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{} import *as a from\"foo\"", options: [override("import", BOTH)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{}import{a} from \"foo\"", options: [override("import", NEITHER)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "{}import* as a from \"foo\"", options: [override("import", NEITHER)], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
 
         // not conflict with `semi-spacing`
-        { code: ";import {a} from \"foo\"", parserOptions: { sourceType: "module" } },
-        { code: "; import{a}from\"foo\"", options: [NEITHER], parserOptions: { sourceType: "module" } },
+        { code: ";import {a} from \"foo\"", parserOptions: { ecmaVersion: 6, sourceType: "module" } },
+        { code: "; import{a}from\"foo\"", options: [NEITHER], parserOptions: { ecmaVersion: 6, sourceType: "module" } },
 
         //----------------------------------------------------------------------
         // in
@@ -1364,28 +1363,83 @@ ruleTester.run("keyword-spacing", rule, {
         {
             code: "import *as a from \"foo\"",
             output: "import * as a from \"foo\"",
-            parserOptions: { sourceType: "module" },
-            errors: expectedBefore("as")
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
+            errors: [{
+                messageId: "expectedBefore",
+                data: { value: "as" },
+                line: 1,
+                column: 9,
+                endLine: 1,
+                endColumn: 11
+            }]
         },
         {
             code: "import* as a from\"foo\"",
             output: "import*as a from\"foo\"",
             options: [NEITHER],
-            parserOptions: { sourceType: "module" },
-            errors: unexpectedBefore("as")
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
+            errors: [{
+                messageId: "unexpectedBefore",
+                data: { value: "as" },
+                line: 1,
+                column: 8,
+                endLine: 1,
+                endColumn: 9
+            }]
+        },
+        {
+            code: "import*   as a from\"foo\"",
+            output: "import*as a from\"foo\"",
+            options: [NEITHER],
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
+            errors: [{
+                messageId: "unexpectedBefore",
+                data: { value: "as" },
+                line: 1,
+                column: 8,
+                endLine: 1,
+                endColumn: 11
+            }]
         },
         {
             code: "import*as a from\"foo\"",
             output: "import* as a from\"foo\"",
             options: [override("as", BOTH)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBefore("as")
         },
         {
             code: "import * as a from \"foo\"",
             output: "import *as a from \"foo\"",
             options: [override("as", NEITHER)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
+            errors: unexpectedBefore("as")
+        },
+        {
+            code: "export *as a from \"foo\"",
+            output: "export * as a from \"foo\"",
+            parserOptions: { ecmaVersion: 2020, sourceType: "module" },
+            errors: expectedBefore("as")
+        },
+        {
+            code: "export* as a from\"foo\"",
+            output: "export*as a from\"foo\"",
+            options: [NEITHER],
+            parserOptions: { ecmaVersion: 2020, sourceType: "module" },
+            errors: unexpectedBefore("as")
+        },
+        {
+            code: "export*as a from\"foo\"",
+            output: "export* as a from\"foo\"",
+            options: [override("as", BOTH)],
+            parserOptions: { ecmaVersion: 2020, sourceType: "module" },
+            errors: expectedBefore("as")
+        },
+        {
+            code: "export * as a from \"foo\"",
+            output: "export *as a from \"foo\"",
+            options: [override("as", NEITHER)],
+            parserOptions: { ecmaVersion: 2020, sourceType: "module" },
             errors: unexpectedBefore("as")
         },
 
@@ -2012,42 +2066,48 @@ ruleTester.run("keyword-spacing", rule, {
         //----------------------------------------------------------------------
 
         {
-            code: "{}export{a}",
-            output: "{} export {a}",
-            parserOptions: { sourceType: "module" },
+            code: "var a = 0; {}export{a}",
+            output: "var a = 0; {} export {a}",
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("export")
         },
         {
-            code: "{}export default a",
-            output: "{} export default a",
-            parserOptions: { sourceType: "module" },
+            code: "var a = 0; {}export default a",
+            output: "var a = 0; {} export default a",
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBefore("export")
+        },
+        {
+            code: "var a = 0; export default{a}",
+            output: "var a = 0; export default {a}",
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
+            errors: expectedAfter("default")
         },
         {
             code: "{}export* from \"a\"",
             output: "{} export * from \"a\"",
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("export")
         },
         {
-            code: "{} export {a}",
-            output: "{}export{a}",
+            code: "var a = 0; {} export {a}",
+            output: "var a = 0; {}export{a}",
             options: [NEITHER],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("export")
         },
         {
-            code: "{}export{a}",
-            output: "{} export {a}",
+            code: "var a = 0; {}export{a}",
+            output: "var a = 0; {} export {a}",
             options: [override("export", BOTH)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("export")
         },
         {
-            code: "{} export {a}",
-            output: "{}export{a}",
+            code: "var a = 0; {} export {a}",
+            output: "var a = 0; {}export{a}",
             options: [override("export", NEITHER)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("export")
         },
 
@@ -2215,82 +2275,82 @@ ruleTester.run("keyword-spacing", rule, {
         {
             code: "import {foo}from\"foo\"",
             output: "import {foo} from \"foo\"",
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("from")
         },
         {
             code: "export {foo}from\"foo\"",
             output: "export {foo} from \"foo\"",
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("from")
         },
         {
             code: "export *from\"foo\"",
             output: "export * from \"foo\"",
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("from")
         },
         {
             code: "import{foo} from \"foo\"",
             output: "import{foo}from\"foo\"",
             options: [NEITHER],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("from")
         },
         {
             code: "export{foo} from \"foo\"",
             output: "export{foo}from\"foo\"",
             options: [NEITHER],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("from")
         },
         {
             code: "export* from \"foo\"",
             output: "export*from\"foo\"",
             options: [NEITHER],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("from")
         },
         {
             code: "import{foo}from\"foo\"",
             output: "import{foo} from \"foo\"",
             options: [override("from", BOTH)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("from")
         },
         {
             code: "export{foo}from\"foo\"",
             output: "export{foo} from \"foo\"",
             options: [override("from", BOTH)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("from")
         },
         {
             code: "export*from\"foo\"",
             output: "export* from \"foo\"",
             options: [override("from", BOTH)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("from")
         },
         {
             code: "import {foo} from \"foo\"",
             output: "import {foo}from\"foo\"",
             options: [override("from", NEITHER)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("from")
         },
         {
             code: "export {foo} from \"foo\"",
             output: "export {foo}from\"foo\"",
             options: [override("from", NEITHER)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("from")
         },
         {
             code: "export * from \"foo\"",
             output: "export *from\"foo\"",
             options: [override("from", NEITHER)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("from")
         },
 
@@ -2450,63 +2510,104 @@ ruleTester.run("keyword-spacing", rule, {
         //----------------------------------------------------------------------
 
         {
+            code: "import* as a from \"foo\"",
+            output: "import * as a from \"foo\"",
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
+            errors: [{
+                messageId: "expectedAfter",
+                data: { value: "import" },
+                line: 1,
+                column: 1,
+                endLine: 1,
+                endColumn: 7
+            }]
+        },
+        {
+            code: "import *as a from\"foo\"",
+            output: "import*as a from\"foo\"",
+            options: [NEITHER],
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
+            errors: [{
+                messageId: "unexpectedAfter",
+                data: { value: "import" },
+                line: 1,
+                column: 7,
+                endLine: 1,
+                endColumn: 8
+            }]
+        },
+        {
+            code: "import   *as a from\"foo\"",
+            output: "import*as a from\"foo\"",
+            options: [NEITHER],
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
+            errors: [{
+                messageId: "unexpectedAfter",
+                data: { value: "import" },
+                line: 1,
+                column: 7,
+                endLine: 1,
+                endColumn: 10
+            }]
+        },
+        {
             code: "{}import{a} from \"foo\"",
             output: "{} import {a} from \"foo\"",
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("import")
         },
         {
             code: "{}import a from \"foo\"",
             output: "{} import a from \"foo\"",
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBefore("import")
         },
         {
             code: "{}import* as a from \"a\"",
             output: "{} import * as a from \"a\"",
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("import")
         },
         {
             code: "{} import {a}from\"foo\"",
             output: "{}import{a}from\"foo\"",
             options: [NEITHER],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("import")
         },
         {
             code: "{} import *as a from\"foo\"",
             output: "{}import*as a from\"foo\"",
             options: [NEITHER],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("import")
         },
         {
             code: "{}import{a}from\"foo\"",
             output: "{} import {a}from\"foo\"",
             options: [override("import", BOTH)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("import")
         },
         {
             code: "{}import*as a from\"foo\"",
             output: "{} import *as a from\"foo\"",
             options: [override("import", BOTH)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: expectedBeforeAndAfter("import")
         },
         {
             code: "{} import {a} from \"foo\"",
             output: "{}import{a} from \"foo\"",
             options: [override("import", NEITHER)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("import")
         },
         {
             code: "{} import * as a from \"foo\"",
             output: "{}import* as a from \"foo\"",
             options: [override("import", NEITHER)],
-            parserOptions: { sourceType: "module" },
+            parserOptions: { ecmaVersion: 6, sourceType: "module" },
             errors: unexpectedBeforeAndAfter("import")
         },
 
@@ -3129,8 +3230,9 @@ ruleTester.run("keyword-spacing", rule, {
         {
             code: "class Foo { @desc({set a(value) {}, get a() {}, async c() {}}) async[foo]() {} }",
             output: "class Foo { @desc({set a(value) {}, get a() {}, async c() {}}) async [foo]() {} }",
-            errors: expectedAfter("async"),
-            parser: parser("typescript-parsers/decorator-with-keywords-class-method")
+            parser: parser("typescript-parsers/decorator-with-keywords-class-method"),
+            errors: expectedAfter("async")
         }
     ]
+
 });
